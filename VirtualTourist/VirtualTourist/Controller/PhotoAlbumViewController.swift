@@ -26,6 +26,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         addAnnotation()
         center(map: mapView, on: selectedPin.coordinate)
 
+        getSavedPhotos()
         checkSavedData()
     }
 
@@ -40,11 +41,10 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     }
 
     func checkSavedData() {
-        if photoPin.photos?.count == 0 {
-            getPhotosFromClient()
-        } else {
-            getSavedPhotos()
+        if photoPin.photos?.count != 0 {
             newCollectionButton.isEnabled = true
+        } else {
+            getPhotosFromClient()
         }
     }
 
