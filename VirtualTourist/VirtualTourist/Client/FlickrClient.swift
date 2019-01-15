@@ -6,9 +6,12 @@ class FlickrClient {
     var dataController: DataController!
 
     func getPhotos(completionHandler: @escaping (_ success: Bool, _ results: [String], _ error: String?) -> Void) {
-        let parameters = getPhotosParameters()
+        let pageLimit = 20
+        let randomPage = self.getRandomNumberFrom(parameter: pageLimit) + 1
 
-        getFlickrData(parameters) { (success, results, error) in
+        let parameters = getPhotosParameters(page: randomPage)
+
+        getRandomFlickrData(parameters, pageNumber: randomPage) { (success, results, error) in
             if success {
                 completionHandler(true, results, nil)
             } else {
@@ -17,49 +20,9 @@ class FlickrClient {
         }
     }
 
-    private func getFlickrData(_ parameters: [String:AnyObject], completionHandler: @escaping (_ success: Bool, _ results: [String], _ error: String?) -> Void) {
-        let url = getUrlFrom(parameters: parameters)
-        let request = URLRequest(url: url)
-
-        let _ = taskForGETMethod(request) { (results, error) in
-            guard (error == nil) else {
-                completionHandler(false, [], error)
-                return
-            }
-            
-            guard let status = results?[FlickrConstants.ResponseKeys.status] as? String, status == FlickrConstants.ResponseValues.ok else {
-                completionHandler(false, [], "Flickr API returned an error.")
-                return
-            }
-
-            guard let photosDictionary = results?[FlickrConstants.ResponseKeys.photos] as? [String:AnyObject] else {
-                completionHandler(false, [], "Cannot find keys '\(FlickrConstants.ResponseKeys.photos)'")
-                return
-            }
-
-            guard let totalPages = photosDictionary[FlickrConstants.ResponseKeys.pages] as? Int else {
-                completionHandler(false, [], "Cannot find key '\(FlickrConstants.ResponseKeys.pages)'")
-                return
-            }
-
-            let pageLimit = min(totalPages, 40)
-            let randomPage = self.getRandomNumberFrom(parameter: pageLimit) + 1
-            
-            self.getRandomFlickrData(parameters, pageNumber: randomPage) { (success, results, error) in
-                if success {
-                    completionHandler(true, results, nil)
-                } else {
-                    completionHandler(false, [], error)
-                }
-            }
-        }
-    }
-
     private func getRandomFlickrData(_ parameters: [String:AnyObject], pageNumber: Int, completionHandler: @escaping (_ success: Bool, _ results: [String], _ error: String?) -> Void) {
-        var parametersWithPageNumber = parameters
-        parametersWithPageNumber[FlickrConstants.Keys.page] = pageNumber as AnyObject?
 
-        let url = getUrlFrom(parameters: parametersWithPageNumber)
+        let url = getUrlFrom(parameters: parameters)
         let request = URLRequest(url: url)
 
         let _ = taskForGETMethod(request) { (results, error) in
@@ -140,14 +103,16 @@ class FlickrClient {
         return task
     }
 
-    private func getPhotosParameters() -> [String:AnyObject] {
+    private func getPhotosParameters(page: Int) -> [String:AnyObject] {
         return [FlickrConstants.Keys.method: FlickrConstants.Values.searchMethod as AnyObject,
                 FlickrConstants.Keys.apiKey: FlickrConstants.API.key as AnyObject,
                 FlickrConstants.Keys.boundingBox: bboxString() as AnyObject,
                 FlickrConstants.Keys.safeSearch: FlickrConstants.Values.safeSearch as AnyObject,
                 FlickrConstants.Keys.extras: FlickrConstants.Values.extras as AnyObject,
                 FlickrConstants.Keys.format: FlickrConstants.Values.format as AnyObject,
-                FlickrConstants.Keys.noJsonCallback: FlickrConstants.Values.noJsonCallback as AnyObject]
+                FlickrConstants.Keys.noJsonCallback: FlickrConstants.Values.noJsonCallback as AnyObject,
+                FlickrConstants.Keys.page: page as AnyObject,
+                FlickrConstants.Keys.perPage: 20 as AnyObject]
     }
 
     private func bboxString() -> String {

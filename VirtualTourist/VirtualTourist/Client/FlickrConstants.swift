@@ -25,6 +25,7 @@ struct FlickrConstants {
         static let format = "format"
         static let noJsonCallback = "nojsoncallback"
         static let page = "page"
+        static let perPage = "per_page"
     }
 
     struct Values {
